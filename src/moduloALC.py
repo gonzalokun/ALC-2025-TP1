@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 # labo 0
 
@@ -9,7 +8,6 @@ def esCuadrada(a):
 
 def matrizDeCeros(filas, columnas):
     return np.array([[0.0 for _ in range(columnas)] for _ in range(filas)])
-
 
 def triangSup(a):
     if not esCuadrada(a):
@@ -257,7 +255,7 @@ def error_relativo(x, y):
     return abs(x - y) / abs(x)
 
 
-def matricesIguales(A, B, tol=1e-08):
+def matricesIguales(A, B, tol=1e-8):
     """
     Devuelve True si ambas matrices son iguales y False en otro caso.
     Considerar que las matrices pueden tener distintas dimensiones, ademas de distintos valores.
@@ -281,8 +279,8 @@ def rota(theta):
     que rota un vector dado en un angulo theta
     """
     res = np.array([
-        [math.cos(theta), -math.sin(theta)],
-        [math.sin(theta), math.cos(theta)]
+        [np.cos(theta), -np.sin(theta)],
+        [np.sin(theta), np.cos(theta)]
     ])
     return res
 
