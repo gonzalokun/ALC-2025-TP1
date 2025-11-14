@@ -42,9 +42,7 @@ def triangInf(a):
 
 
 def diagonal(a):
-    a = np.array(a)
-
-    filas = len(a)
+    filas = a.shape[0]
     result = matrizDeCeros(filas, filas)
     for fila in range(filas):
         for columna in range(filas):
@@ -207,7 +205,7 @@ def numeroAureo(n):
 
 def multiplicar(matrizA, matrizB):
     if matrizA.shape[1] != matrizB.shape[0]:
-        raise Exception("No se puede :(")
+        raise Exception("No se puede multiplicar :(")
 
     res = matrizDeCeros(matrizA.shape[0], matrizB.shape[1])
 
@@ -224,7 +222,7 @@ def multiplacionMatricialDeVectores(vectorA, vectorB):
 
     for i in range(vectorA.shape[0]):
         for j in range(vectorB.shape[0]):
-            res[i][j] = vectorA[i] * vectorB[j]
+            res[i, j] = vectorA[i] * vectorB[j]
     return res
 
 
@@ -441,6 +439,7 @@ def condExacta(A, p):
 # labo 4
 
 def calculaLU(A):
+    print("Tamaño A: ", A.shape)
     nops = 0
     upper = matrizDeCeros(A.shape[0], A.shape[1]) + A
     lower = escala([1 for _ in range(A.shape[0])])
@@ -557,6 +556,7 @@ def QR_con_GS(A, tol=1e-12, retorna_nops=False):
     retorna matrices Q y R calculadas con Gram Schmidt (y como tercer argumento opcional, el numero de operaciones).
     Si la matriz A no es de n x n, debe retornar None
     """
+    # TODO: Revisar el psudocodigo porque hace cualquiera
     nops = 0  # TODO: Ver si los nops estan bien calculados porque no hay tests sobre ellos
     n = A.shape[0]
 
@@ -602,7 +602,7 @@ def QR_con_HH(A, tol=1e-12):
 
     for k in range(n):
         x = R[k:m, k]
-        alfa = (-1) * np.sign(x[0]) / norma(x, 2)
+        alfa = (-1) * np.sign(x[0]) * norma(x, 2)
         u = x - alfa * np.eye(m - k)[0]
         norma_u = norma(u, 2)
         if norma_u > tol:
@@ -863,7 +863,7 @@ def svd_reducida(A, k="max", tol=1e-15):
             res[j][i] = autovectores[i][j]
 
     V_s = vectorAMatriz(res)
-    E_s = autovalores
+    E_s = np.array(autovalores)
 
     B = multiplicar(A, V_s)
 

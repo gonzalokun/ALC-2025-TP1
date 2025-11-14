@@ -1,16 +1,18 @@
 from wsgiref.util import request_uri
 
 import numpy as np
+from logitech_receiver.hidpp20 import SUB_PARAM
 
 # TODO: traer todos los metodos en la seccion de abajo cuando estén corregidos
-from moduloALC import multiplicar, matricesIguales, esSimetrica, traspuesta, inversa, svd_reducida, calculaQR, calculaLU, esSDP, calculaLDV
-from src.moduloALC import calcularAx, res_tri
+from moduloALC import multiplicar, matricesIguales, esSimetrica, traspuesta, inversa, svd_reducida, calculaQR, \
+    calculaLU, esSDP, calculaLDV, diagonal
+from moduloALC import calcularAx, res_tri
 
 
 # Funciones del Labo
 
 def multiplicar_en_cadena(*lista):
-    res = np.eye(lista[0].shape)
+    res = np.eye(lista[0].shape[0])
 
     for matriz in lista:
         res = multiplicar(res, matriz)
@@ -24,7 +26,9 @@ def aplicar_raiz_a_diagonal(A):
     return res
 
 def calcular_rango(A):
-    _, res_gauss, _ = calculaLU(A)
+    X = A if A.shape[0] <= A.shape[1] else traspuesta(A)
+    _, res_gauss, _ = calculaLU(X)
+
     rank = 0
     for i in range(res_gauss.shape[0]):
         todosCeros = True
@@ -41,7 +45,7 @@ def calculaCholesky(A, atol=1e-10):
     if not esSDP(A, atol):
         return None
 
-    L, D, _ = calculaLDV(A)
+    L, D, _, _ = calculaLDV(A)
 
     R = multiplicar(L, aplicar_raiz_a_diagonal(D))
 
@@ -103,16 +107,38 @@ def cargarDataset(carpeta):
 
 # 1
 
-def pinvEcuacionesLineales(L, Y):
-
+def despejar_cholesky(L, X):
     Lt = traspuesta(L)
+
     matriz_solucion = []
-    for columna in range(Lt.shape[1]):
-        xi = res_tri(L, Lt[:, columna])
+    for columna in range(X.shape[1]):
+        xi = res_tri(L, X[:, columna])
         ui = res_tri(Lt, xi, False)
         matriz_solucion.append(ui)
 
-    return np.array(matriz_solucion)
+    return traspuesta(np.array(matriz_solucion))
+
+def pinvEcuacionesLineales(X, L, Y):
+
+    rango = calcular_rango(X)
+
+    n, p = X.shape
+    if rango == p and n > p:
+        U = despejar_cholesky(L, traspuesta(X))
+        return multiplicar(Y, U)
+
+    # Caso 2
+    if rango == n and n < p:
+        Vt = despejar_cholesky(L, X)
+        return multiplicar(Y, traspuesta(Vt))
+
+    # Caso 3
+    if rango == n and n == p:
+        invX = inversa(X)
+        return multiplicar(Y, invX)
+
+    print("ERROR HORRIBLE")
+    return ":("
 
 def algoritmo1(X, Y):
     # W = Y*L+
@@ -124,15 +150,13 @@ def algoritmo1(X, Y):
     if rango == p and n > p:
         XtX = multiplicar(Xt, X)
         L, _ = calculaCholesky(XtX)
-        U = pinvEcuacionesLineales(L, Xt)
-        return multiplicar(Y, U)
+        return pinvEcuacionesLineales(X, L, Y)
 
     # Caso 2
     if rango == n and n < p:
         XXt = multiplicar(X, traspuesta(X))
         L, _ = calculaCholesky(traspuesta(XXt))
-        Vt = pinvEcuacionesLineales(L, X)
-        return multiplicar(Y, traspuesta(Vt))
+        return pinvEcuacionesLineales(X, L, Y)
 
     # Caso 3
     if rango == n and n == p:
@@ -147,46 +171,55 @@ def algoritmo1(X, Y):
 def algoritmo2(X, Y):
     #Pre Condicion: X tiene dimension nxp y n<p, rango(X)=n (rango completo) y Y dimension m×p (matrices en los reales)
     U, S, V = svd_reducida(X, k="max", tol=1e-15)
-    W = pinvSVD(U, S, V, Y)
+    W = pinvSVD(U, diagonal(S), V, Y)
     return W
 
 
 def pinvSVD(U, S, V, Y):
     #calcula W  minW : ||Y-WX||_2
 
-    S1_inv = np.zeros((S.shape[1], S.shape[0]))
+    S1_inv = np.zeros((S.shape[0], S.shape[1]))
 
     for i in range(S.shape[0]):
         if S[i, i] > 1e-15:
             S1_inv[i, i] = 1 / S[i, i]
 
-    U1 = U[:][:S.shape[1]]  #sospecho que como usamos el algoritmo svd_reducida, U ya tiene las columnas correctas pero x las dudas las cortamos
-    V1 = V[:][:S.shape[0]]
+    U1 = U[:, 0:S.shape[1]]  #sospecho que como usamos el algoritmo svd_reducida, U ya tiene las columnas correctas pero x las dudas las cortamos
+    V1 = V[:, 0:S.shape[0]]
     U1_t = traspuesta(U1)
 
-    pinvX = multiplicar_en_cadena(V1, S1_inv, traspuesta(U1_t))
-
-    W = multiplicar_en_cadena(Y,pinvX)
+    pinvX = multiplicar_en_cadena(V1, S1_inv, U1_t)
+    W = multiplicar_en_cadena(Y, pinvX)
     return W
 
 # 3
 
 def pinvHouseHolder(Q, R, Y):
-    X_plus = multiplicar(Q,inversa(traspuesta(R)))
-    V = X_plus
-    return multiplicar(Y,V)
+    Qt = traspuesta(Q)
+    matriz_solucion = []
+    for columna in range(Qt.shape[1]):
+        ui = res_tri(R, Qt[:, columna], False)
+        matriz_solucion.append(ui)
+
+    Vt = np.array(matriz_solucion)
+    return multiplicar(Y, Vt)
 
 def pinvGramSchmidt(Q, R, Y):
-    X_plus = multiplicar(Q, inversa(traspuesta(R)))
-    V = X_plus
-    return multiplicar(Y, V)
+    Qt = traspuesta(Q)
+    matriz_solucion = []
+    for columna in range(Qt.shape[1]):
+        ui = res_tri(R, Qt[:, columna], False)
+        matriz_solucion.append(ui)
+
+    Vt = np.array(matriz_solucion)
+    return multiplicar(Y, Vt)
 
 def algoritmo3(X, Y, metodo="RH"):
 
     if metodo not in ["RH", "GS"]:
         return None
 
-    Q,R = calculaQR(traspuesta(X), metodo)
+    Q, R = calculaQR(traspuesta(X), metodo)
 
     if metodo == "RH":
         return pinvHouseHolder(Q, R, Y)
