@@ -5,8 +5,8 @@ from logitech_receiver.hidpp20 import SUB_PARAM
 
 # TODO: traer todos los metodos en la seccion de abajo cuando estén corregidos
 from moduloALC import multiplicar, matricesIguales, esSimetrica, traspuesta, inversa, svd_reducida, calculaQR, \
-    calculaLU, esSDP, calculaLDV, diagonal
-from moduloALC import calcularAx, res_tri
+    calculaLU, esSDP, calculaLDV, diagonal, calcularAx, res_tri
+from src.moduloALC import calculaQR_exp, matrizDeCeros
 
 
 # Funciones del Labo
@@ -219,7 +219,7 @@ def algoritmo3(X, Y, metodo="RH"):
     if metodo not in ["RH", "GS"]:
         return None
 
-    Q, R = calculaQR(traspuesta(X), metodo)
+    Q, R = calculaQR_exp(traspuesta(X), metodo)
 
     if metodo == "RH":
         return pinvHouseHolder(Q, R, Y)
@@ -234,3 +234,30 @@ def esPseudoInversa(X, pX, tol=1e-8):
         and matricesIguales(multiplicar_en_cadena(pX, X, pX), pX, tol) \
         and esSimetrica(multiplicar(X, pX)) \
         and esSimetrica(multiplicar(pX, X))
+
+# 5
+
+def matrizConfusion(YPrediction, YReal):
+
+    res = matrizDeCeros(2, 2)
+
+    for j in range(YPrediction.shape[1]):
+        valorReal = (YReal[0, j], YReal[1, j])
+        valorPred = (YPrediction[0, j], YPrediction[1, j])
+
+        if valorPred[0] >= valorPred[1]:
+            # Prediccion Gato
+            if np.abs(valorReal[0] - 1) < 1e-15:
+                # Era gato
+                res[0, 0] += 1
+            else:
+                res[1, 0] += 1
+        else:
+            # Prediccion Perro
+            if np.abs(valorReal[1] - 1) < 1e-15:
+                # Era perro
+                res[1, 1] += 1
+            else:
+                res[0, 1] += 1
+
+    return res

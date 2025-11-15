@@ -563,8 +563,8 @@ def QR_con_GS(A, tol=1e-12, retorna_nops=False):
     if n != A.shape[1]:
         return None
 
-    Q = np.zeros(A.shape)
-    R = np.zeros(A.shape)
+    Q = matrizDeCeros(A.shape[0], A.shape[1])
+    R = matrizDeCeros(A.shape[0], A.shape[1])
 
     for j in range(0, n):
         Q[:, j] = A[:, j]
@@ -584,6 +584,42 @@ def QR_con_GS(A, tol=1e-12, retorna_nops=False):
 
     return [Q, R]
 
+def QR_con_GS_no_cuadrada(A, tol=1e-12, retorna_nops=False):
+    """
+    A una matriz de n x n
+    tol la tolerancia con la que se filtran elementos nulos en R
+    retorna_nops permite (opcionalmente) retornar el numero de operaciones realizado
+    retorna matrices Q y R calculadas con Gram Schmidt (y como tercer argumento opcional, el numero de operaciones).
+    Si la matriz A no es de n x n, debe retornar None
+    """
+    nops = 0
+    n = A.shape[1]
+
+    Q = matrizDeCeros(A.shape[0], A.shape[1])
+    R = matrizDeCeros(A.shape[1], A.shape[1])
+
+    for j in range(0, n):
+        # print(f"COLUMNA: {j}")
+        Q[:, j] = A[:, j]
+        for k in range(j):
+            R[k, j] = productoEscalar(Q[:, k], Q[:, j])
+            nops += n * 2 - 1  # n mult y n-1 sumas
+            Q[:, j] = Q[:, j] - vectorPorEscalar(Q[:, k], R[k, j])
+            nops += n * 2  # n mult y n restas
+
+        R[j, j] = norma(Q[:, j], 2)
+
+        # if R[j, j] < 1e-15:
+        #     print(f"COLUMNA {j} = :(")
+
+        nops += n * 2  # n mult y n-1 sumas y una raiz
+        Q[:, j] = vectorPorEscalar(Q[:, j], 1 / R[j, j])
+        nops += n  # n mult
+
+    if retorna_nops:
+        return [Q, R, nops]
+
+    return [Q, R]
 
 def QR_con_HH(A, tol=1e-12):
     """
@@ -625,12 +661,36 @@ def calculaQR(A, metodo='RH', tol=1e-12):
     Si el metodo no esta entre las opciones, retorna None
     """
     if metodo == 'GS':
+
+        if not esCuadrada(A):
+            filas, columnas = A.shape
+            maxDim = max(filas, columnas)
+            M = np.eye(maxDim, maxDim)
+            M[:filas, :columnas] = A
+            return QR_con_GS(M, tol)
+
         return QR_con_GS(A, tol)
+
     elif metodo == 'RH':
         return QR_con_HH(A, tol)
     else:
         return None
 
+def calculaQR_exp(A, metodo='RH', tol=1e-12):
+    """
+    A una matriz de n x n
+    tol la tolerancia con la que se filtran elementos nulos en R
+    metodo = ['RH','GS'] usa reflectores de Householder (RH) o Gram Schmidt (GS) para realizar la factorizacion
+    retorna matrices Q y R calculadas con Gram Schmidt (y como tercer argumento opcional, el numero de operaciones)
+    Si el metodo no esta entre las opciones, retorna None
+    """
+    if metodo == 'GS':
+        return QR_con_GS_no_cuadrada(A, tol)
+
+    elif metodo == 'RH':
+        return QR_con_HH(A, tol)
+    else:
+        return None
 
 def matrizPorEscalar(A, c):
     res = np.zeros(A.shape)
