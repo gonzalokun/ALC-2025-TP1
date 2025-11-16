@@ -1,5 +1,3 @@
-from wsgiref.util import request_uri
-
 import numpy as np
 
 # TODO: traer todos los metodos en la seccion de abajo cuando estén corregidos
