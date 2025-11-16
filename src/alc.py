@@ -1,7 +1,6 @@
 from wsgiref.util import request_uri
 
 import numpy as np
-from logitech_receiver.hidpp20 import SUB_PARAM
 
 # TODO: traer todos los metodos en la seccion de abajo cuando estén corregidos
 from moduloALC import multiplicar, matricesIguales, esSimetrica, traspuesta, inversa, svd_reducida, calculaQR, \
@@ -42,8 +41,8 @@ def calcular_rango(A):
     return rank
 
 def calculaCholesky(A, atol=1e-10):
-    if not esSDP(A, atol):
-        return None
+    # if not esSDP(A, atol):
+    #     return None
 
     L, D, _, _ = calculaLDV(A)
 
@@ -140,6 +139,28 @@ def pinvEcuacionesLineales(X, L, Y):
     print("ERROR HORRIBLE")
     return ":("
 
+def pinvEcuacionesLinealesConRango(X, L, Y, r):
+
+    rango = r
+
+    n, p = X.shape
+    if rango == p and n > p:
+        U = despejar_cholesky(L, traspuesta(X))
+        return multiplicar(Y, U)
+
+    # Caso 2
+    if rango == n and n < p:
+        Vt = despejar_cholesky(L, X)
+        return multiplicar(Y, traspuesta(Vt))
+
+    # Caso 3
+    if rango == n and n == p:
+        invX = inversa(X)
+        return multiplicar(Y, invX)
+
+    print("ERROR HORRIBLE")
+    return ":("
+
 def algoritmo1(X, Y):
     # W = Y*L+
     rango = calcular_rango(X)
@@ -150,13 +171,13 @@ def algoritmo1(X, Y):
     if rango == p and n > p:
         XtX = multiplicar(Xt, X)
         L, _ = calculaCholesky(XtX)
-        return pinvEcuacionesLineales(X, L, Y)
+        return pinvEcuacionesLinealesConRango(X, L, Y, rango)
 
     # Caso 2
     if rango == n and n < p:
         XXt = multiplicar(X, traspuesta(X))
         L, _ = calculaCholesky(traspuesta(XXt))
-        return pinvEcuacionesLineales(X, L, Y)
+        return pinvEcuacionesLinealesConRango(X, L, Y, rango)
 
     # Caso 3
     if rango == n and n == p:

@@ -204,17 +204,20 @@ def numeroAureo(n):
 
 
 def multiplicar(matrizA, matrizB):
-    if matrizA.shape[1] != matrizB.shape[0]:
+    filasA, columnasA = matrizA.shape
+    filasB, columnasB = matrizB.shape
+
+    if columnasA != filasB:
         raise Exception("No se puede multiplicar :(")
 
-    res = matrizDeCeros(matrizA.shape[0], matrizB.shape[1])
+    res = matrizDeCeros(filasA, columnasB)
 
-    for i in range(matrizA.shape[0]):
-        for j in range(matrizB.shape[1]):
-            for k in range(matrizA.shape[1]):
-                res[i][j] += matrizA[i][k] * matrizB[k][j]
+    for i in range(filasA):
+        for j in range(columnasB):
+            for k in range(columnasA):
+                res[i, j] += matrizA[i, k] * matrizB[k, j]
 
-    return np.array(res)
+    return res
 
 
 def multiplacionMatricialDeVectores(vectorA, vectorB):
@@ -439,7 +442,7 @@ def condExacta(A, p):
 # labo 4
 
 def calculaLU(A):
-    print("Tamaño A: ", A.shape)
+    print("Calculando LU para matriz de: ", A.shape)
     nops = 0
     upper = matrizDeCeros(A.shape[0], A.shape[1]) + A
     lower = escala([1 for _ in range(A.shape[0])])
