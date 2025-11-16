@@ -1,10 +1,7 @@
 import numpy as np
 
 # TODO: traer todos los metodos en la seccion de abajo cuando estén corregidos
-from moduloALC import multiplicar, matricesIguales, esSimetrica, traspuesta, inversa, svd_reducida, calculaQR, \
-    calculaLU, esSDP, calculaLDV, diagonal, calcularAx, res_tri
-from src.moduloALC import calculaQR_exp, matrizDeCeros
-
+from moduloALC import *
 
 # Funciones del Labo
 
