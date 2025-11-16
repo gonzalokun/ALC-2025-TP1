@@ -204,6 +204,7 @@ def numeroAureo(n):
 
 
 def multiplicar(matrizA, matrizB):
+    return matrizA @ matrizB
     filasA, columnasA = matrizA.shape
     filasB, columnasB = matrizB.shape
 
@@ -631,6 +632,7 @@ def QR_con_HH(A, tol=1e-12):
     retorna matrices Q y R calculadas con reflexiones de Householder
     Si la matriz A no cumple m>=n, debe retornar None
     """
+    print("Calculando QR con HH")
     m = A.shape[0]
     n = A.shape[1]
     if m < n:
@@ -640,6 +642,7 @@ def QR_con_HH(A, tol=1e-12):
     Q = np.eye(m)
 
     for k in range(n):
+        print(f"\r\tIteracion: {k}", end="")
         x = R[k:m, k]
         alfa = (-1) * np.sign(x[0]) * norma(x, 2)
         u = x - alfa * np.eye(m - k)[0]
@@ -721,18 +724,21 @@ def aplicarMatrizKVecesYNormalizar(A, v, k):
         w = aplicarMatrizYNormalizar(A, w)
     return w
 
-
 def metpot2k(A, tol=1e-15, K=1000):
     v = np.random.rand(A.shape[1])
     vPrima = aplicarMatrizKVecesYNormalizar(A, v, 2)
 
     e = productoEscalar(vPrima, v)
     k = 0
+    print("metpot2k     aplica matriz cantidad de veces: ")
     while np.abs(e - 1) > tol and k < K:
         v = vPrima
         vPrima = aplicarMatrizKVecesYNormalizar(A, v, 2)
+        print(f"\r    {k * 2 + 2}", end="")
+
         e = productoEscalar(vPrima, v)
         k += 1
+    print()
 
     autovalor = productoEscalar(vPrima, calcularAx(A, vPrima))
 
@@ -740,6 +746,8 @@ def metpot2k(A, tol=1e-15, K=1000):
     #     autovalor = 0.0
 
     error = e - 1
+    print(f"metpot2k     obtuvo autovalor: {autovalor}")
+
     return [vPrima, autovalor, error]
 
 
@@ -755,35 +763,48 @@ def restarVectores(a, b):
     return res
 
 
-def diagRH(A, tol=1e-15, K=1000):
-    if not esSimetrica(A):
-        return None
-
-    autovector, lamda, _ = metpot2k(A, tol, K)
+def diagRH(A, tol=1e-15, K=1000, simetrica=False, iteracionesFaltantes="max"):
+    if simetrica == False:
+        # comentar esto si
+        if not esSimetrica(A):
+            return None
+    else:
+        simetrica = True
 
     n = A.shape[0]
-    u = restarVectores(np.eye(n)[0], autovector)
-    uNormaAl2 = norma(u, 2) ** 2
 
-    aRestar = matrizPorEscalar(multiplacionMatricialDeVectores(u, u), (2 / uNormaAl2))
-    reflectorHouseholder = restar(np.eye(n), aRestar)
-
-    if n == 2:
-        S = reflectorHouseholder
-        D = multiplicar(reflectorHouseholder, multiplicar(A, traspuesta(reflectorHouseholder)))
+    if iteracionesFaltantes != "max" and iteracionesFaltantes == 0:
+        S = np.eye(n)
+        D = A
 
     else:
-        B = multiplicar(reflectorHouseholder, multiplicar(A, traspuesta(reflectorHouseholder)))
-        APrima = B[1:n, 1:n]
-        SPrima, DPrima = diagRH(APrima, tol, K)
-        D = matrizPorEscalar(np.eye(A.shape[0]), lamda)
-        D[1:n, 1:n] = DPrima
-        S = np.eye(A.shape[0])
-        S[1:n, 1:n] = SPrima
-        S = multiplicar(reflectorHouseholder, S)
+        iteracionesFaltantesImprimir = iteracionesFaltantes
+        if iteracionesFaltantesImprimir == "max":
+            iteracionesFaltantesImprimir = n
+        print(f"metpot2k     es llamada desde diagRH, faltando {iteracionesFaltantesImprimir} recursiones de diagRH")
+        autovector, lamda, _ = metpot2k(A, tol, K)
+
+        u = restarVectores(np.eye(n)[0], autovector)
+        uNormaAl2 = norma(u, 2) ** 2
+
+        aRestar = matrizPorEscalar(multiplacionMatricialDeVectores(u, u), (2 / uNormaAl2))
+        reflectorHouseholder = restar(np.eye(n), aRestar)
+
+        if n == 2:
+            S = reflectorHouseholder
+            D = multiplicar(reflectorHouseholder, multiplicar(A, traspuesta(reflectorHouseholder)))
+
+        else:
+            B = multiplicar(reflectorHouseholder, multiplicar(A, traspuesta(reflectorHouseholder)))
+            APrima = B[1:n, 1:n]
+            SPrima, DPrima = diagRH(APrima, tol, K, simetrica, iteracionesFaltantes - 1)
+            D = matrizPorEscalar(np.eye(A.shape[0]), lamda)
+            D[1:n, 1:n] = DPrima
+            S = np.eye(A.shape[0])
+            S[1:n, 1:n] = SPrima
+            S = multiplicar(reflectorHouseholder, S)
 
     return S, D
-
 
 # LABO-7
 
@@ -899,19 +920,23 @@ def multiplica_rala_vector(A, v):
 
 # Labo 8
 
-def svd_reducida(A, k="max", tol=1e-15):
+def svd_reducida(A, tol=1e-15, rango="max"):
+    print("traspuesta   es llamada desde svd_reducida")
     A_t = traspuesta(A)
+    print("multiplicar  es llamada desde svd_reducida")
     M = multiplicar(A_t, A)
-    S, D = diagRH(M, tol)
+
+    print("diagRH       es llamada desde svd_reducida")
+    S, D = diagRH(M, tol, K=1000, simetrica=True, iteracionesFaltantes=rango)
 
     autovectores = []
     autovalores = []
 
-    if k == "max":
-        k = D.shape[0]
+    if rango == "max":
+        rango = D.shape[0]
 
     i = 0
-    while i < k and np.abs(D[i, i]) >= tol:
+    while i < rango and np.abs(D[i, i]) >= tol:
 
         if np.abs(D[i, i]) >= tol and not (D[i, i] < 0):
             autovectores.append(S[:, i])

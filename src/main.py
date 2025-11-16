@@ -11,8 +11,9 @@ def main():
     print("Yv: ", Yv.shape)
 
     # W = algoritmo1(Xt, Yt)
-    W = algoritmo1(Xt[:, 0:100], Yt[:, 0:100])
+    # W = algoritmo1(Xt[:, 0:100], Yt[:, 0:100])
     # W = algoritmo2(Xt[: ,0:5], Yt[:, 0:5])
+    W = algoritmo2(Xt, Yt, svdRango=1)
     # W = algoritmo3(Xt[0:5, 0:10], Yt[0:5, 0:10])
     # W = algoritmo3(Xt[0:5, 0:10], Yt[:, 0:10], metodo="GS")
 

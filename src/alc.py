@@ -184,9 +184,11 @@ def algoritmo1(X, Y):
 
 # 2
 
-def algoritmo2(X, Y):
+def algoritmo2(X, Y, svdRango="max"):
     #Pre Condicion: X tiene dimension nxp y n<p, rango(X)=n (rango completo) y Y dimension m×p (matrices en los reales)
-    U, S, V = svd_reducida(X, k="max", tol=1e-15)
+    print("svd_reducida es llamada desde algoritmo2")
+    U, S, V = svd_reducida(X, tol=1e-15, rango = svdRango)
+    print("pinvSVD      es llamada desde algoritmo2")
     W = pinvSVD(U, diagonal(S), V, Y)
     return W
 
@@ -211,23 +213,31 @@ def pinvSVD(U, S, V, Y):
 # 3
 
 def pinvHouseHolder(Q, R, Y):
+    print("pinvHouseHolder")
     Qt = traspuesta(Q)
     matriz_solucion = []
     for columna in range(Qt.shape[1]):
+        print(f"\r\tcalculando vector: {columna}", end="")
         ui = res_tri(R, Qt[:, columna], False)
         matriz_solucion.append(ui)
 
+    print()
     Vt = np.array(matriz_solucion)
+    print("calculando W")
     return multiplicar(Y, Vt)
 
 def pinvGramSchmidt(Q, R, Y):
+    print("pinvGramSchmidt")
     Qt = traspuesta(Q)
     matriz_solucion = []
     for columna in range(Qt.shape[1]):
+        print(f"\r\tcalculando vector: {columna}", end="")
         ui = res_tri(R, Qt[:, columna], False)
         matriz_solucion.append(ui)
 
+    print()
     Vt = np.array(matriz_solucion)
+    print("calculando W")
     return multiplicar(Y, Vt)
 
 def algoritmo3(X, Y, metodo="RH"):
