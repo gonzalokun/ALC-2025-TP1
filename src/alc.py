@@ -247,6 +247,7 @@ def algoritmo3(X, Y, metodo="RH"):
 
     Q, R = calculaQR_exp(traspuesta(X), metodo)
 
+    print()
     if metodo == "RH":
         return pinvHouseHolder(Q, R, Y)
 

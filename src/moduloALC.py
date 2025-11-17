@@ -596,6 +596,7 @@ def QR_con_GS_no_cuadrada(A, tol=1e-12, retorna_nops=False):
     retorna matrices Q y R calculadas con Gram Schmidt (y como tercer argumento opcional, el numero de operaciones).
     Si la matriz A no es de n x n, debe retornar None
     """
+    print("Calculando QR con GS no cuadrada")
     nops = 0
     n = A.shape[1]
 
@@ -603,7 +604,7 @@ def QR_con_GS_no_cuadrada(A, tol=1e-12, retorna_nops=False):
     R = matrizDeCeros(A.shape[1], A.shape[1])
 
     for j in range(0, n):
-        # print(f"COLUMNA: {j}")
+        print(f"\rCalculando columna: {j}", end="")
         Q[:, j] = A[:, j]
         for k in range(j):
             R[k, j] = productoEscalar(Q[:, k], Q[:, j])
@@ -730,13 +731,14 @@ def metpot2k(A, tol=1e-15, K=1000):
 
     e = productoEscalar(vPrima, v)
     k = 0
-    print("metpot2k     aplica matriz cantidad de veces: ")
+    print("metpot2k     aplica matriz cantidad de veces: ", end="")
     while np.abs(e - 1) > tol and k < K:
         v = vPrima
         vPrima = aplicarMatrizKVecesYNormalizar(A, v, 2)
         print(f"\r    {k * 2 + 2}", end="")
 
         e = productoEscalar(vPrima, v)
+        print(f"\terror: {e}", end="")
         k += 1
     print()
 
