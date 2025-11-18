@@ -3,7 +3,9 @@ import numpy as np
 # TODO: traer todos los metodos en la seccion de abajo cuando estén corregidos
 from moduloALC import *
 
-# Funciones del Labo
+# Modulo del labo
+
+# Funciones extras
 
 def multiplicar_en_cadena(*lista):
     res = np.eye(lista[0].shape[0])
@@ -288,3 +290,14 @@ def matrizConfusion(YPrediction, YReal):
                 res[0, 1] += 1
 
     return res
+
+# 6.b
+
+def calcularPerformanceDeCalificacion(M):
+    totalGatos = M[0, 0] + M[0, 1]
+    totalPerros = M[1, 0] + M[1, 1]
+
+    precisionGatos = M[0, 0] / (totalGatos + 1e-15)
+    precisionPerros = M[1, 1] / (totalPerros + 1e-15)
+
+    return precisionGatos, precisionPerros
