@@ -767,7 +767,40 @@ def restarVectores(a, b):
     return res
 
 
-def diagRH(A, tol=1e-15, K=1000, simetrica=False, iteracionesFaltantes="max"):
+def diagRH(A, tol=1e-15, K=1000):
+    if not esSimetrica(A):
+        return None
+
+    autovector, lamda, _ = metpot2k(A, tol, K)
+
+    n = A.shape[0]
+    u = restarVectores(np.eye(n)[0], autovector)
+    uNormaAl2 = norma(u, 2) ** 2
+
+    aRestar = matrizPorEscalar(multiplacionMatricialDeVectores(u, u), (2 / uNormaAl2))
+    reflectorHouseholder = restar(np.eye(n), aRestar)
+
+    if n == 2:
+        S = reflectorHouseholder
+        D = multiplicar(reflectorHouseholder, multiplicar(A, traspuesta(reflectorHouseholder)))
+
+    else:
+        B = multiplicar(reflectorHouseholder, multiplicar(A, traspuesta(reflectorHouseholder)))
+        APrima = B[1:n, 1:n]
+        SPrima, DPrima = diagRH(APrima, tol, K)
+        D = matrizPorEscalar(np.eye(A.shape[0]), lamda)
+        D[1:n, 1:n] = DPrima
+        S = np.eye(A.shape[0])
+        S[1:n, 1:n] = SPrima
+        S = multiplicar(reflectorHouseholder, S)
+
+    return S, D
+
+
+
+def diagRHParcial(A, tol=1e-15, K=1000, simetrica=False, iteracionesFaltantes="max"):
+    # Esta versión de diagRG diagonaliza solamente que se agota iteracionesFaltantes.
+      
     if simetrica == False:
         # comentar esto si
         if not esSimetrica(A):
@@ -785,6 +818,7 @@ def diagRH(A, tol=1e-15, K=1000, simetrica=False, iteracionesFaltantes="max"):
         iteracionesFaltantesImprimir = iteracionesFaltantes
         if iteracionesFaltantesImprimir == "max":
             iteracionesFaltantesImprimir = n
+            iteracionesFaltantes = n
         print(f"metpot2k     es llamada desde diagRH, faltando {iteracionesFaltantesImprimir} recursiones de diagRH")
         autovector, lamda, _ = metpot2k(A, tol, K)
 
@@ -924,7 +958,8 @@ def multiplica_rala_vector(A, v):
 
 # Labo 8
 
-def svd_reducida(A, tol=1e-15, rango="max"):
+def svd_reducida(A, tol=1e-15, k="max"):
+    rango = k
     print("traspuesta   es llamada desde svd_reducida")
     A_t = traspuesta(A)
     print("multiplicar  es llamada desde svd_reducida")
@@ -1267,3 +1302,20 @@ def calcularPerformanceDeCalificacion(M):
     precisionPerros = M[1, 1] / totalPerros if totalPerros > 0 else 0
 
     return precisionGatos, precisionPerros
+
+
+def algoritmo2Experimentacion(X, Y, Xv, Yv):
+    #Pre Condicion: X tiene dimension nxp y n<p, rango(X)=n (rango completo) y Y dimension m×p (matrices en los reales)
+    print("svd_reducida es llamada desde algoritmo2")
+    # U, S, V = svd_reducida(X, tol=1e-15, rango = svdRango)
+
+    U, Sarray, V = np.linalg.svd(X, full_matrices=False)
+
+    resultados = []
+
+    step = 40
+    for i in range(40, 2040, step):
+        W = pinvSVD(U[:, 0:i], diagonal(Sarray)[0:i, 0:i], traspuesta(V)[:, 0:i], Y)
+        resultados.append(matrizConfusion(W @ Xv, Yv))
+    return resultados
+
