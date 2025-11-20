@@ -206,7 +206,14 @@ def numeroAureo(n):
 
 
 def multiplicar(matrizA, matrizB):
-    return matrizA @ matrizB
+    """
+    Muliplica 2 matrices, si las dimensiones son correctas.
+    Si no son correctas tira exception
+    """
+
+    # Descomentar esto si no quieren que tarde 1 hora...
+    #return matrizA @ matrizB
+
     filasA, columnasA = matrizA.shape
     filasB, columnasB = matrizB.shape
 
@@ -799,8 +806,11 @@ def diagRH(A, tol=1e-15, K=1000):
 
 
 def diagRHParcial(A, tol=1e-15, K=1000, simetrica=False, iteracionesFaltantes="max"):
-    # Esta versión de diagRG diagonaliza solamente que se agota iteracionesFaltantes.
-      
+    """
+    Esta versión de diagRH diagonaliza hasta que se agota iteracionesFaltantes.
+    Calcula una diagonalización parcial
+    """
+
     if simetrica == False:
         # comentar esto si
         if not esSimetrica(A):
@@ -959,6 +969,13 @@ def multiplica_rala_vector(A, v):
 # Labo 8
 
 def svd_reducida(A, tol=1e-15, k="max"):
+    """
+    A matriz de interes
+    k numero de valores singulares y vectores a retener
+    tol tolerancia para considerar un auto valor igual a 0
+    retorna hatU (matriz de m*k), hatSig (vector de k), hatV (matriz de n*k))
+    """
+
     rango = k
     print("traspuesta   es llamada desde svd_reducida")
     A_t = traspuesta(A)
@@ -966,7 +983,7 @@ def svd_reducida(A, tol=1e-15, k="max"):
     M = multiplicar(A_t, A)
 
     print("diagRH       es llamada desde svd_reducida")
-    S, D = diagRH(M, tol, K=1000, simetrica=True, iteracionesFaltantes=rango)
+    S, D = diagRH(M, tol, K=1000)
 
     autovectores = []
     autovalores = []
@@ -1004,6 +1021,10 @@ def svd_reducida(A, tol=1e-15, k="max"):
 # Funciones extras
 
 def multiplicar_en_cadena(*lista):
+    """
+    lista: lista de matrices a multiplicar, se asume que las dimensiones son las correctas para cada matriz
+    retorna matriz resultante de multiplicar las matrices de la lista de izquierda a derecha
+    """
     res = np.eye(lista[0].shape[0])
 
     for matriz in lista:
@@ -1012,12 +1033,21 @@ def multiplicar_en_cadena(*lista):
     return res
 
 def aplicar_raiz_a_diagonal(A):
+    """
+    Aplica raiz cuadrada a la diagonal de una matriz A
+    retorna una matriz nueva igual a la de entrada excepto por la diagonal modificada
+    """
     res = A
     for i in range(res.shape[0]):
         res[i][i] = np.sqrt(res[i][i])
     return res
 
 def calcular_rango(A):
+    """
+    Calcula el rango de la matriz A
+    A: matriz de n*m
+    retorna el rango de la matriz
+    """
     X = A if A.shape[0] <= A.shape[1] else traspuesta(A)
     _, res_gauss, _ = calculaLU(X)
 
@@ -1034,8 +1064,10 @@ def calcular_rango(A):
     return rank
 
 def calculaCholesky(A, atol=1e-10):
-    # if not esSDP(A, atol):
-    #     return None
+    """
+    Calcula la descomposición de Cholesky de una matriz A
+    Asume que la matriz A es SDP
+    """
 
     L, D, _, _ = calculaLDV(A)
 
@@ -1043,20 +1075,12 @@ def calculaCholesky(A, atol=1e-10):
 
     return R, traspuesta(R)
 
-def resolver_sistema_con_cholesky(A, B, atol=1e-10):
-    R, Rt = calculaCholesky(A, atol)
-
-    matriz_solucion = []
-    for columna in range(B.shape[1]):
-        yi = res_tri(R, B[:, columna])
-        xi = res_tri(Rt, yi, False)
-        matriz_solucion.append(xi)
-
-    return np.array(matriz_solucion)
-
 # Funciones TP
 
 def cargarDataset(carpeta):
+    """
+    Carga los datos de los embeddings
+    """
     matrizGatosTrain = np.load(carpeta + "/train/cats/efficientnet_b3_embeddings.npy")
     matrizPerrosTrain = np.load(carpeta + "/train/dogs/efficientnet_b3_embeddings.npy")
 
@@ -1100,6 +1124,12 @@ def cargarDataset(carpeta):
 # 1
 
 def despejar_cholesky(L, X):
+    """
+    Despeja el L*Lt*V = X
+    L: Matriz de cholesky
+    X: matriz de soluciones
+    retorna la matriz V tal que L*Lt*V = X
+    """
     Lt = traspuesta(L)
 
     matriz_solucion = []
@@ -1111,7 +1141,13 @@ def despejar_cholesky(L, X):
     return traspuesta(np.array(matriz_solucion))
 
 def pinvEcuacionesLineales(X, L, Y):
-
+    """
+    Calcula la matriz W que minimiza ||Y-WX||2 en base a la matriz de Cholesky
+    X: matriz de embeddings
+    L: matriz de cholesky
+    Y: matriz de targets
+    retorna la matriz W
+    """
     rango = calcular_rango(X)
 
     n, p = X.shape
@@ -1133,7 +1169,14 @@ def pinvEcuacionesLineales(X, L, Y):
     return ":("
 
 def pinvEcuacionesLinealesConRango(X, L, Y, r):
-
+    """
+    Calcula la matriz W que minimiza ||Y-WX||2 en base a la matriz de Cholesky
+    X: matriz de embeddings
+    L: matriz de cholesky
+    Y: matriz de targets
+    r: rango precalculado de la matriz X
+    retorna la matriz W
+    """
     rango = r
 
     n, p = X.shape
@@ -1197,7 +1240,11 @@ def algoritmo2(X, Y, svdRango="max"):
 
 
 def pinvSVD(U, S, V, Y):
-    #calcula W  minW : ||Y-WX||_2
+    """
+    La funcion recibe las matrices U,S,V de la descomposicion
+    SVD, y Y la matriz de targets de entrenamiento
+    devuelve: W la pseudoInversa calculada tal que minimiza ||Y-WX||_2
+    """
 
     S1_inv = np.zeros((S.shape[0], S.shape[1]))
 
@@ -1216,6 +1263,11 @@ def pinvSVD(U, S, V, Y):
 # 3
 
 def pinvHouseHolder(Q, R, Y):
+    """
+    La funcion recibe las matrices Q,R de la descomposicion QR utilizando HouseHolder, y Y la
+        matriz de targets de entrenamiento.
+    La funcion devuelve: W la pseudoInversa calculada tal que minimiza || Y-WX||_2
+    """
     print("pinvHouseHolder")
     Qt = traspuesta(Q)
     matriz_solucion = []
@@ -1230,6 +1282,11 @@ def pinvHouseHolder(Q, R, Y):
     return multiplicar(Y, Vt)
 
 def pinvGramSchmidt(Q, R, Y):
+    """
+    La funcion recibe las matrices Q,R de la descomposicion QR utilizando Gram-Schmid, y Y la
+        matriz de targets de entrenamiento.
+    La funcion devuelve: W la pseudoInversa calculada tal que minimiza || Y-WX||_2
+    """
     print("pinvGramSchmidt")
     Qt = traspuesta(Q)
     matriz_solucion = []
@@ -1260,6 +1317,12 @@ def algoritmo3(X, Y, metodo="RH"):
 # 4
 
 def esPseudoInversa(X, pX, tol=1e-8):
+    """
+    X: matriz de n*m
+    Xp: matriz de m*n
+    tol: tolerancia para calcular si valores son 0
+    retorna: True si Xp es pseudoinversa de X, False en caso contrario
+    """
     return matricesIguales(multiplicar_en_cadena(X, pX, X), X, tol) \
         and matricesIguales(multiplicar_en_cadena(pX, X, pX), pX, tol) \
         and esSimetrica(multiplicar(X, pX)) \
@@ -1268,6 +1331,13 @@ def esPseudoInversa(X, pX, tol=1e-8):
 # 5
 
 def matrizConfusion(YPrediction, YReal):
+
+    """
+    Calcula la matriz de confución para una matriz de predicciones y una matriz de resultados esperados
+    YPrediction: matriz de predicciones
+    YReal: matriz de resultados esperados
+    retorna la matriz de confusion apropiada
+    """
 
     res = matrizDeCeros(2, 2)
 
@@ -1295,6 +1365,12 @@ def matrizConfusion(YPrediction, YReal):
 # 6.b
 
 def calcularPerformanceDeCalificacion(M):
+    """
+
+    M: Matriz de confusion
+    retorna un array conteniendo el porcentaje de aciertos de gatos sobre el total
+    y el porcentaje de aciertos de perros sobre el total respetivamente
+    """
     totalGatos = M[0, 0] + M[0, 1]
     totalPerros = M[1, 0] + M[1, 1]
 
